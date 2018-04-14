@@ -79,7 +79,7 @@ app = {
         },
         success: function (data) {
           $.each(data.user.contexts, function(index, context) {
-            if (context.name == "Fulcrum Labs") {
+            if (context.name == "Tilson SLC") {
               localStorage.setItem("fulcrum_geobooze_token", btoa(context.api_token));
               localStorage.setItem("fulcrum_userfullname", data.user.first_name + " " + data.user.last_name);
             }
