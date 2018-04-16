@@ -395,7 +395,7 @@ app = {
             }
           }
         });
-      } else if (userEmail.includes("tilson") || userEmail.includes("verizon")) {
+      } else if (app.authenticateModule.login.userEmail.includes("tilson") || app.authenticateModule.login.userEmail.includes("verizon")) {
         var featureLayer = L.geoJson(null, {
           filter: function(feature, layer) {
             if (feature.properties.contractor != "") return true;
@@ -539,7 +539,7 @@ app = {
 
     configMap: function() {
       app.map = L.map("map", {
-        layers: [this.layers.mapboxOSM, this.layers.mapboxSat, this.layers.SLCLLDRoute, geojsonModule.featureLayer],
+        layers: [this.layers.mapboxOSM, this.layers.mapboxSat, this.layers.SLCLLDRoute, app.geojsonModule.featureLayer],
         zoomControl: false
       }).fitWorld();
 
