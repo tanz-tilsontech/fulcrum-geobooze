@@ -2,9 +2,9 @@ app = {
 
   init: function() {
     this.authenticateModule.checkAuth();
-    this.mapModule.configMap();
-    this.formModule.configForm();
     this.bindUIActions();
+    this.geojsonModule.fulcrumLayer();
+    this.geojsonModule.fetchGeojson();
   },
 
   bindUIActions: function() {
