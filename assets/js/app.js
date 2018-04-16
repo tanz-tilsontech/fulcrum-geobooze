@@ -346,85 +346,6 @@ app = {
     }]
   },
 
-
-
-  mapModule: {
-    layers: {
-      mapboxOSM: L.tileLayer('http://{s}.tiles.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZWNvdHJ1c3QiLCJhIjoibGo4TG5nOCJ9.QJnT2dgjL4_4EA7WlK8Zkw', {
-        maxZoom: 20
-      }),
-
-      mapboxSat: L.tileLayer('https://api.mapbox.com/v4/cfritz1387.573ca1ee/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiY2ZyaXR6MTM4NyIsImEiOiJjaWphZTZ0eHkwMDVwdWlseGx5aWhhbXlwIn0._lgb3vbGMSx1-jdZCufdgg', {
-        maxZoom: 20
-      }),
-
-      SLCLLDRoute: L.tileLayer('http://ttm-tileify-proxy1.herokuapp.com/tiles/{z}/{x}/{y}?url=https%3A%2F%2Ftilsonwebdraco.3-gislive.com%2Farcgis%2Frest%2Fservices%2FSLClld%2FTilsonslc_lld%2FMapServer&transparent=true&layers=show%3A3%2C10%2C31%2C44%2C47%2C49', {
-        maxZoom: 20
-      })
-    },
-
-    controls: {
-      locateCtrl: L.control.locate({
-        position: "topright",
-        setView: "untilPan",
-        keepCurrentZoomLevel: false,
-        clickBehavior: {
-          inView: "stop",
-          outOfView: "setView"
-        },
-        drawCircle: true,
-        drawMarker: true,
-        showPopup: false,
-        markerStyle: {
-          weight: 1,
-          opacity: 0.8,
-          fillOpacity: 0.8
-        },
-        circleStyle: {
-          weight: 1,
-          clickable: false
-        },
-        locateOptions: {
-          maxZoom: 18,
-          watch: true,
-          enableHighAccuracy: true,
-          maximumAge: 10000,
-          timeout: 10000
-        }
-      }),
-
-      fullscreenControl: L.control.fullscreen({
-        position: "topright"
-      })
-    },
-
-    configMap: function() {
-      app.map = L.map("map", {
-        layers: [this.layers.mapboxOSM, this.layers.mapboxSat, this.layers.SLCLLDRoute, geojsonModule.featureLayer],
-        zoomControl: false
-      }).fitWorld();
-
-      app.map.attributionControl.setPrefix("");
-
-      app.map.on("fullscreenchange", function(e) {
-        if (app.map.isFullscreen()) {
-          $(".crosshair").css("z-index", 9999999999);
-        } else {
-          $(".crosshair").css("z-index", "");
-        }
-    	});
-
-      app.map.on("moveend", function(e) {
-        $("#latitude").val(app.map.getCenter().lat.toFixed(6));
-        $("#longitude").val(app.map.getCenter().lng.toFixed(6));
-    	});
-
-      this.controls.locateCtrl.addTo(app.map).start();
-
-      this.controls.fullscreenControl.addTo(app.map);
-    }
-  },
-
   geojsonModule: {
     fulcrumLayer: function() {
       if (app.authenticateModule.login.userEmail.includes("fibertel")) {
@@ -563,6 +484,83 @@ app = {
           });
         }
       });
+    }
+  },
+
+  mapModule: {
+    layers: {
+      mapboxOSM: L.tileLayer('http://{s}.tiles.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZWNvdHJ1c3QiLCJhIjoibGo4TG5nOCJ9.QJnT2dgjL4_4EA7WlK8Zkw', {
+        maxZoom: 20
+      }),
+
+      mapboxSat: L.tileLayer('https://api.mapbox.com/v4/cfritz1387.573ca1ee/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiY2ZyaXR6MTM4NyIsImEiOiJjaWphZTZ0eHkwMDVwdWlseGx5aWhhbXlwIn0._lgb3vbGMSx1-jdZCufdgg', {
+        maxZoom: 20
+      }),
+
+      SLCLLDRoute: L.tileLayer('http://ttm-tileify-proxy1.herokuapp.com/tiles/{z}/{x}/{y}?url=https%3A%2F%2Ftilsonwebdraco.3-gislive.com%2Farcgis%2Frest%2Fservices%2FSLClld%2FTilsonslc_lld%2FMapServer&transparent=true&layers=show%3A3%2C10%2C31%2C44%2C47%2C49', {
+        maxZoom: 20
+      })
+    },
+
+    controls: {
+      locateCtrl: L.control.locate({
+        position: "topright",
+        setView: "untilPan",
+        keepCurrentZoomLevel: false,
+        clickBehavior: {
+          inView: "stop",
+          outOfView: "setView"
+        },
+        drawCircle: true,
+        drawMarker: true,
+        showPopup: false,
+        markerStyle: {
+          weight: 1,
+          opacity: 0.8,
+          fillOpacity: 0.8
+        },
+        circleStyle: {
+          weight: 1,
+          clickable: false
+        },
+        locateOptions: {
+          maxZoom: 18,
+          watch: true,
+          enableHighAccuracy: true,
+          maximumAge: 10000,
+          timeout: 10000
+        }
+      }),
+
+      fullscreenControl: L.control.fullscreen({
+        position: "topright"
+      })
+    },
+
+    configMap: function() {
+      app.map = L.map("map", {
+        layers: [this.layers.mapboxOSM, this.layers.mapboxSat, this.layers.SLCLLDRoute, geojsonModule.featureLayer],
+        zoomControl: false
+      }).fitWorld();
+
+      app.map.attributionControl.setPrefix("");
+
+      app.map.on("fullscreenchange", function(e) {
+        if (app.map.isFullscreen()) {
+          $(".crosshair").css("z-index", 9999999999);
+        } else {
+          $(".crosshair").css("z-index", "");
+        }
+    	});
+
+      app.map.on("moveend", function(e) {
+        $("#latitude").val(app.map.getCenter().lat.toFixed(6));
+        $("#longitude").val(app.map.getCenter().lng.toFixed(6));
+    	});
+
+      this.controls.locateCtrl.addTo(app.map).start();
+
+      this.controls.fullscreenControl.addTo(app.map);
     }
   }
 };
