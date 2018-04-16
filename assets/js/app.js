@@ -12,10 +12,6 @@ app = {
       app.authenticateModule.login();
     });
 
-    $("#logout-btn").click(function() {
-      app.authenticateModule.logout();
-    });
-
     $("#about-btn").click(function() {
       $("#collapsed-navbar").collapse("hide");
       $("#about-modal").modal("show");
@@ -24,11 +20,11 @@ app = {
     $("#map-toggle-btn").click(function() {
       $("#collapsed-navbar").collapse("hide");
       if ($("#mapboxStreets").hasClass("active")) {
-        app.map.addLayer(app.mapModule.layers.mapboxHyb);
-        app.map.removeLayer(app.mapModule.layers.mapboxStreets);
+        app.map.addLayer(app.mapModule.layers.mapboxOSM);
+        app.map.removeLayer(app.mapModule.layers.mapboxSat);
       } else {
-        app.map.addLayer(app.mapModule.layers.mapboxStreets);
-        app.map.removeLayer(app.mapModule.layers.mapboxHyb);
+        app.map.addLayer(app.mapModule.layers.mapboxOSM);
+        app.map.removeLayer(app.mapModule.layers.mapboxSat);
       }
     });
 
@@ -53,11 +49,10 @@ app = {
 
   authenticateModule: {
     checkAuth: function() {
-      if (!localStorage.getItem("fulcrum_geobooze_token")) {
+      if (!sessionStorage.getItem("fulcrum_app_token")) {
         $("#login-modal").modal("show");
       } else {
         $("#login-modal").modal("hide");
-        app.formModule.fetchBeerTypes();
       }
     },
 
@@ -80,209 +75,291 @@ app = {
         success: function (data) {
           $.each(data.user.contexts, function(index, context) {
             if (context.name == "Tilson SLC") {
-              localStorage.setItem("fulcrum_geobooze_token", btoa(context.api_token));
-              localStorage.setItem("fulcrum_userfullname", data.user.first_name + " " + data.user.last_name);
+              sessionStorage.setItem("fulcrum_app_token", btoa(context.api_token));
+              sessionStorage.setItem("fulcrum_userfullname", data.user.first_name + " " + data.user.last_name);
             }
           });
-          if (!localStorage.getItem("fulcrum_geobooze_token")) {
-            alert("This login does not have access to the Fulcrum Labs organization.");
+          if (!sessionStorage.getItem("fulcrum_app_token")) {
+            alert("This login does not have access to the Tilson DataMap.");
           }
           app.authenticateModule.checkAuth();
         }
       });
-    },
-
-    logout: function() {
-      localStorage.removeItem("fulcrum_geobooze_token");
-      localStorage.removeItem("fulcrum_userfullname");
-      location.reload();
     }
   },
 
-  formModule: {
-    configForm: function() {
-      $.ajax({
-        url: "form.html",
-        success: function(data) {
-          $("#form-fields").html(data);
-          app.formModule.previewPhoto();
-        }
-      });
-
-      webshims.setOptions("forms", {
-        replaceValidationUI: true,
-        lazyCustomMessages: true,
-        iVal: {
-          sel: ".ws-validate",
-          handleBubble: "hide",
-          errorMessageClass: "help-block",
-          //successWrapperClass: "has-success",
-          errorWrapperClass: "has-danger",
-          fieldWrapper: ".form-group"
-        },
-        customDatalist: "auto",
-        list: {
-          "focus": true,
-          "highlight": true
-        }
-      });
-
-      webshims.setOptions("forms-ext", {
-        replaceUI: false,
-        types: "date range number",
-        date: {
-          startView: 2,
-          openOnFocus: true
-        },
-        number: {
-          calculateWidth: false
-        },
-        range: {
-          classes: "show-activevaluetooltip"
-        }
-      });
-
-      webshims.polyfill("forms forms-ext");
+  featureConfig: {
+    config: {
+      geojson: "https://web.fulcrumapp.com/shares/fb96b48deb5cfb94.geojson",
+      title: "SLC OneFiber (FiberTel)",
+      layerName: "Routes",
+      hoverProperty: "status_title_github",
+      sortProperty: "fqnid",
+      sortOrder: "ascend",
     },
 
-    fetchBeerTypes: function() {
-      var url = "https://api.fulcrumapp.com/api/v2/query/?format=json&token=" + atob(localStorage.getItem("fulcrum_geobooze_token")) + "&q=" + encodeURIComponent("SELECT _record_id, name FROM \"Beer Types\" ORDER BY name ASC");
-      $.getJSON(url, function (data) {
-        var options = "";
-        $.each(data.rows, function(index, row) {
-          options += '<option value="' + row.name + '"></option>';
-        });
-        $("#beers > select").htmlPolyfill(options);
-      });
-    },
-
-    guid: function() {
-      function _p8(s) {
-        var p = (Math.random().toString(16)+"000000000").substr(2,8);
-        return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
+    properties: [{
+      value: "status_title",
+      label: "Status",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string",
+        input: "checkbox",
+        vertical: true,
+        multiple: true,
+        operators: ["in", "not_in", "equal", "not_equal"],
+        values: []
       }
-      return _p8() + _p8(true) + _p8(true) + _p8();
     },
-
-    ratingToStars: function(rating) {
-      return Array(rating + 1).join("★") + Array(6 - rating).join("☆");
+    {
+      value: "hub",
+      label: "Hub",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string",
+        input: "checkbox",
+        vertical: true,
+        multiple: true,
+        operators: ["in", "not_in", "equal", "not_equal"],
+        values: []
+      }
     },
-
-    previewPhoto: function() {
-      $("#photo").change(function(e) {
-        if (e.target.files.length > 0) {
-          var file = e.target.files[0];
-          var reader = new FileReader();
-          reader.onload = function(e) {
-            $("#photo-preview").attr("src", reader.result);
-            $("#photo-preview").show();
-          };
-          reader.readAsDataURL(file);
-        } else {
-          $("#photo-preview").attr("src", "");
-          $("#photo-preview").hide();
-        }
-
-      });
+    {
+      value: "site",
+      label: "Site",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string",
+        input: "checkbox",
+        vertical: true,
+        multiple: true,
+        operators: ["in", "not_in", "equal", "not_equal"],
+        values: []
+      }
     },
-
-    uploadPhoto: function() {
-      var formData = new FormData();
-      formData.append("photo[access_key]", this.guid());
-      formData.append("photo[file]", $("#photo")[0].files[0]);
-      $.ajax({
-        type: "POST",
-        url: "https://api.fulcrumapp.com/api/v2/photos.json",
-        data: formData,
-        cache: false,
-        contentType: false,
-        processData: false,
-        dataType: "json",
-        headers: {
-          "X-ApiToken": atob(localStorage.getItem("fulcrum_geobooze_token"))
-        },
-        success: function (data) {
-          app.formModule.submitRecord(data.photo.access_key);
-        }
-      });
+    {
+      value: "wpid",
+      label: "WPID",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string",
+        input: "checkbox",
+        vertical: true,
+        multiple: true,
+        operators: ["in", "not_in", "equal", "not_equal"],
+        values: []
+      }
     },
-
-    submitRecord: function(photo_key) {
-      var record = {
-        "record": {
-          "form_id": "3d8d8429-f578-4025-8b48-c6bdedb971d5", // Fulcrum Labs
-          "latitude": $("#latitude").val(),
-          "longitude": $("#longitude").val(),
-          "form_values": {
-            "f36f": $("[name='post_to_slack']").val(),
-            "9fa9": $("[name='date']").val(),
-            "8afb": $("[name='time']").val(),
-            "758e": $("[name='name']").val(),
-            "3722": $("[name='beer_type_value']").val(),
-            "eb1a": $("[name='brewery']").val(),
-            "2aeb": $("[name='abv']").val(),
-            "a8c2": $("[name='venue']").val(),
-            "a2f5": $("[name='rating']").val(),
-            "adbb": $("[name='comments']").val(),
-            "eca1": ":beer:"
-          }
-        }
-      };
-
-      var message = "Bottoms up! " + localStorage.getItem("fulcrum_userfullname") + " drank some " + $("[name='name']").val();
-      if ($("[name='venue']").val()) {
-        message += " at " + $("[name='venue']").val() + ".";
-      } else {
-        message += ".";
+    {
+      value: "fqnid",
+      label: "ROUTE FQNID",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string",
+        input: "checkbox",
+        vertical: true,
+        multiple: true,
+        operators: ["in", "not_in", "equal", "not_equal"],
+        values: []
       }
-      if ($("[name='rating']").val()) {
-        message += "\nRating: " + this.ratingToStars(parseInt($("[name='rating']").val()));
+    },
+    {
+      value: "fiber_fqnid_1",
+      label: "FIBER FQNID",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string",
+        input: "checkbox",
+        vertical: true,
+        multiple: true,
+        operators: ["in", "not_in", "equal", "not_equal"],
+        values: []
       }
-      if ($("[name='comments']").val()) {
-        message += "\nComments: " + $("[name='comments']").val();
+    },
+    {
+      value: "ntp_date",
+      label: "Proposed Start Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
       }
-      if (photo_key) {
-        record.record.form_values["0a28"] = [{
-          "photo_id": photo_key
-        }];
-
-        record.record.form_values.af67 = "https://web.fulcrumapp.com/shares/0f9c51f389d22079/photos/" +photo_key;
-
-        message += "\n" + "https://web.fulcrumapp.com/shares/0f9c51f389d22079/photos/"+photo_key;
+    },
+    {
+      value: "proposed_type",
+      label: "Proposed Type",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string"
       }
-      record.record.form_values["58ac"] = message;
-
-      $.ajax({
-        type: "POST",
-        url: "https://api.fulcrumapp.com/api/v2/records.json",
-        data: JSON.stringify(record),
-        contentType: "application/json",
-        dataType: "json",
-        headers: {
-          "X-ApiToken": atob(localStorage.getItem("fulcrum_geobooze_token"))
-        },
-        success: function (data) {
-          $("#loading-modal").modal("hide");
-          $("#photo-preview").hide();
-          $("#form")[0].reset();
-          $("#latitude").val(app.map.getCenter().lat.toFixed(6));
-          $("#longitude").val(app.map.getCenter().lng.toFixed(6));
-          alert("Your GeoBooze has been successfully submited! Well done, you deserve another round!");
-        }
-      });
-    }
+    },
+    {
+      value: "proposed_product",
+      label: "Proposed Product",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "string"
+      }
+    },
+    {
+      value: "proposed_footage",
+      label: "Proposed Footage",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "integer",
+      }
+    },
+    {
+      value: "construction_start_date_cx_final",
+      label: "Construction Start Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
+      }
+    },
+    {
+      value: "construction_complete_date_cx_final",
+      label: "Construction Complete Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
+      }
+    },
+    {
+      value: "construction_pass_date_qc_final",
+      label: "Construction QC Pass Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
+      }
+    },
+    {
+      value: "construction_footage_cx_final",
+      label: "Construction Total Footage",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "integer",
+      }
+    },
+    {
+      value: "cable_placement_start_date_cx_final",
+      label: "Cable Placement Start Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
+      }
+    },
+    {
+      value: "cable_placement_complete_date_cx_final",
+      label: "Cable Placement Complete Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
+      }
+    },
+    {
+      value: "cable_placement_pass_date_qc_final",
+      label: "Cable Placement QC Pass Date",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "date"
+      }
+    },
+    {
+      value: "cable_placement_total_footage_cx_final",
+      label: "Cable Placement Total Footage",
+      table: {
+        visible: true,
+        sortable: true
+      },
+      filter: {
+        type: "integer"
+      }
+    },
+    {
+      value: "fulcrum_id",
+      label: "Record ID",
+      table: {
+        visible: false,
+        sortable: false
+      },
+      info: false
+    },
+    {
+      value: "contractor",
+      label: "Contractor",
+      table: {
+        visible: false,
+        sortable: false
+      },
+      info: false
+    }];
   },
+
+
 
   mapModule: {
     layers: {
-      mapboxStreets: L.tileLayer('https://{s}.tiles.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiYnJ5bWNicmlkZSIsImEiOiJXN1NuOFFjIn0.3YNvR1YOvqEdeSsJDa-JUw', {
-        maxZoom: 18,
-        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>"
-      }),
+      mapboxOSM: L.tileLayer('http://{s}.tiles.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZWNvdHJ1c3QiLCJhIjoibGo4TG5nOCJ9.QJnT2dgjL4_4EA7WlK8Zkw', {
+        maxZoom: 20
+      })
 
-      mapboxHyb: L.tileLayer('https://{s}.tiles.mapbox.com/v4/mapbox.streets-satellite/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiYnJ5bWNicmlkZSIsImEiOiJXN1NuOFFjIn0.3YNvR1YOvqEdeSsJDa-JUw', {
-        maxZoom: 18,
-        attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>"
+      mapboxSat: L.tileLayer('https://api.mapbox.com/v4/cfritz1387.573ca1ee/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiY2ZyaXR6MTM4NyIsImEiOiJjaWphZTZ0eHkwMDVwdWlseGx5aWhhbXlwIn0._lgb3vbGMSx1-jdZCufdgg', {
+        maxZoom: 20
+      })
+
+      SLCLLDRoute = L.tileLayer('http://ttm-tileify-proxy1.herokuapp.com/tiles/{z}/{x}/{y}?url=https%3A%2F%2Ftilsonwebdraco.3-gislive.com%2Farcgis%2Frest%2Fservices%2FSLClld%2FTilsonslc_lld%2FMapServer&transparent=true&layers=show%3A3%2C10%2C31%2C44%2C47%2C49', {
+        maxZoom: 20
       })
     },
 
@@ -307,14 +384,6 @@ app = {
           weight: 1,
           clickable: false
         },
-        icon: "fa fa-crosshairs",
-        iconLoading: "fa fa-spinner fa-spin",
-        metric: false,
-        strings: {
-          title: "My location",
-          popup: "You are within {distance} {unit} from this point",
-          outsideMapBoundsMsg: "You seem located outside the boundaries of the map"
-        },
         locateOptions: {
           maxZoom: 18,
           watch: true,
@@ -331,7 +400,7 @@ app = {
 
     configMap: function() {
       app.map = L.map("map", {
-        layers: [this.layers.mapboxStreets],
+        layers: [this.layers.mapboxOSM, this.layers.mapboxSat, this.layers.SLCLLDRoute, geojsonModule.featureLayer],
         zoomControl: false
       }).fitWorld();
 
@@ -353,6 +422,147 @@ app = {
       this.controls.locateCtrl.addTo(app.map).start();
 
       this.controls.fullscreenControl.addTo(app.map);
+    }
+  },
+
+  geojsonModule: {
+    fulcrumLayer: function() {
+      if (app.authenticateModule.login.userEmail.includes("fibertel")) {
+        
+        featureLayer: L.fetchGeojson.geoJson(null, {
+          filter: function(feature, layer) {
+            if (feature.properties.contractor === "FiberTel") return true;
+          },
+          pointToLayer: function (feature, latlng) {
+            return L.marker(latlng, {
+              title: feature.properties["status_title_github"],
+              riseOnHover: true,
+              icon: L.icon({
+                iconUrl: "assets/pictures/markers/cb0d0c.png",
+                iconSize: [30, 40],
+                iconAnchor: [15, 32]
+              })
+            });
+          },
+          onEachFeature: function (feature, layer) {
+            if (feature.properties) {
+              layer.on({
+                click: function (e) {
+                  identifyFeature(L.stamp(layer));
+                  highlightLayer.clearLayers();
+                  highlightLayer.addData(featureLayer.getLayer(L.stamp(layer)).toGeoJSON());
+                },
+                mouseover: function (e) {
+                  if (config.hoverProperty) {
+                    $(".info-control").html(feature.properties[config.hoverProperty]);
+                    $(".info-control").show();
+                  }
+                },
+                mouseout: function (e) {
+                  $(".info-control").hide();
+                }
+              });
+              if (feature.properties["marker-color"]) {
+                layer.setIcon(
+                  L.icon({
+                    iconUrl: "assets/pictures/markers/" + feature.properties["marker-color"].replace("#",'').toLowerCase() + ".png",
+                    iconSize: [30, 40],
+                    iconAnchor: [15, 32]
+                  })
+                );
+              }
+            }
+          }
+        });
+      } else if (userEmail.includes("tilson") || userEmail.includes("verizon")) {
+        var featureLayer = L.geoJson(null, {
+          filter: function(feature, layer) {
+            if (feature.properties.contractor != "") return true;
+          },
+          pointToLayer: function (feature, latlng) {
+            return L.marker(latlng, {
+              title: feature.properties["status_title_github"],
+              riseOnHover: true,
+              icon: L.icon({
+                iconUrl: "assets/pictures/markers/cb0d0c.png",
+                iconSize: [30, 40],
+                iconAnchor: [15, 32]
+              })
+            });
+          },
+          onEachFeature: function (feature, layer) {
+            if (feature.properties) {
+              layer.on({
+                click: function (e) {
+                  identifyFeature(L.stamp(layer));
+                  highlightLayer.clearLayers();
+                  highlightLayer.addData(featureLayer.getLayer(L.stamp(layer)).toGeoJSON());
+                },
+                mouseover: function (e) {
+                  if (config.hoverProperty) {
+                    $(".info-control").html(feature.properties[config.hoverProperty]);
+                    $(".info-control").show();
+                  }
+                },
+                mouseout: function (e) {
+                  $(".info-control").hide();
+                }
+              });
+              if (feature.properties["marker-color"]) {
+                layer.setIcon(
+                  L.icon({
+                    iconUrl: "assets/pictures/markers/" + feature.properties["marker-color"].replace("#",'').toLowerCase() + ".png",
+                    iconSize: [30, 40],
+                    iconAnchor: [15, 32]
+                  })
+                );
+              }
+            }
+          }
+        });
+      };
+    },
+
+
+    fetchGeojson: function() {
+      $.getJSON(featureConfig.config.geojson, function (data) {
+        geojson = data
+        features = $.map(geojson.features, function(feature) {
+          return feature.properties;
+        });
+        featureLayer.addData(data);
+        buildConfig();
+        $("#loading-mask").hide();
+        var style = {
+          "property": "status",
+          "values": {
+            "Segment Ready": "https://image.ibb.co/iXHCyH/1891c9.png",
+            "Segment Not Ready": "https://image.ibb.co/hk21sc/242424.png",
+            "Construction Started": "https://image.ibb.co/mC5Akx/ffd300.png",
+            "Constractor CX QC": "https://image.ibb.co/hHRSXc/b3b3b3.png",
+            "Tilson CX QC": "https://image.ibb.co/c3TVkx/ff8819.png",
+            "Construction Fix": "https://image.ibb.co/cen1sc/cb0d0c.png",
+            "Cable Placement Ready": "https://image.ibb.co/iXHCyH/1891c9.png",
+            "Cable Placement Started": "https://image.ibb.co/mC5Akx/ffd300.png",
+            "Contractor CP QC": "https://image.ibb.co/hHRSXc/b3b3b3.png",
+            "Tilson CP QC": "https://image.ibb.co/c3TVkx/ff8819.png",
+            "Cable Placement Fix": "https://image.ibb.co/cen1sc/cb0d0c.png",
+            "Splicing/Testing Pending": "https://image.ibb.co/hxOkJH/87d30f.png"
+          }
+        }
+        JSON.stringify(style);
+        if (style.property && style.values) {
+          $("#legend-item").removeClass("hidden");
+          $("#legend-title").html(style.property.toUpperCase().replace(/_/g, " "));
+          $.each(style.values, function(property, value) {
+            if (value.startsWith("http")) {
+              $("#legend").append("<p><img src='" + value + "'></i> " + property + "</p>");
+            } else {
+              $("#legend").append("<p><i style='background:" + value + "'></i> " + property + "</p>");
+            }
+          });
+        }
+      });
     }
   }
 };
