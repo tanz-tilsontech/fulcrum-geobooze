@@ -3,8 +3,6 @@ app = {
   init: function() {
     this.authenticateModule.checkAuth();
     this.bindUIActions();
-    this.geojsonModule.fulcrumLayer();
-    this.geojsonModule.fetchGeojson();
   },
 
   bindUIActions: function() {
