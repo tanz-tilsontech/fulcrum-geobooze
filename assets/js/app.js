@@ -3,6 +3,8 @@ app = {
   init: function() {
     this.authenticateModule.checkAuth();
     this.bindUIActions();
+    this.geojsonModule.fulcrumLayer();
+    this.geojsonModule.fetchGeojson();
   },
 
   bindUIActions: function() {
@@ -346,7 +348,7 @@ app = {
 
   geojsonModule: {
     fulcrumLayer: function() {
-      if (app.authenticateModule.login.userEmail.includes("fibertel")) {
+      if (app.authenticateModule.login.username.includes("fibertel")) {
         
         featureLayer: L.fetchGeojson.geoJson(null, {
           filter: function(feature, layer) {
@@ -393,7 +395,7 @@ app = {
             }
           }
         });
-      } else if (app.authenticateModule.login.userEmail.includes("tilson") || app.authenticateModule.login.userEmail.includes("verizon")) {
+      } else if (app.authenticateModule.login.username.includes("tilson") || app.authenticateModule.login.username.includes("verizon")) {
         var featureLayer = L.geoJson(null, {
           filter: function(feature, layer) {
             if (feature.properties.contractor != "") return true;
