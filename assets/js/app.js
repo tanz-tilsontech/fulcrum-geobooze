@@ -3,6 +3,7 @@ app = {
   init: function() {
     this.authenticateModule.checkAuth();
     this.bindUIActions();
+    var useremail = sessionStorage.getItem("fulcrum_useremail");
     this.geojsonModule.fulcrumLayer();
     this.geojsonModule.fetchGeojson();
   },
@@ -77,6 +78,7 @@ app = {
             if (context.name == "Tilson SLC") {
               sessionStorage.setItem("fulcrum_app_token", btoa(context.api_token));
               sessionStorage.setItem("fulcrum_userfullname", data.user.first_name + " " + data.user.last_name);
+              sessionStorage.setItem("fulcrum_useremail", data.user.email);
             }
           });
           if (!sessionStorage.getItem("fulcrum_app_token")) {
@@ -348,7 +350,7 @@ app = {
 
   geojsonModule: {
     fulcrumLayer: function() {
-      if (app.authenticateModule.login.username.includes("fibertel")) {
+      if (app.init.useremail.includes("fibertel")) {
         
         featureLayer: L.fetchGeojson.geoJson(null, {
           filter: function(feature, layer) {
@@ -395,7 +397,7 @@ app = {
             }
           }
         });
-      } else if (app.authenticateModule.login.username.includes("tilson") || app.authenticateModule.login.username.includes("verizon")) {
+      } else if (app.init.useremail.includes("tilson") || app.init.useremail.includes("verizon")) {
         var featureLayer = L.geoJson(null, {
           filter: function(feature, layer) {
             if (feature.properties.contractor != "") return true;
