@@ -343,7 +343,7 @@ app = {
         sortable: false
       },
       info: false
-    }];
+    }]
   },
 
 
